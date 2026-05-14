@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>포인팅 효과 시뮬레이터</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Zurlo et al. (2020) 기반</p>
+      <h1>포인팅 효과 시뮬레이터</h1>
+    </div>
+    <div class="status-pill" aria-live="polite">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">준비됨</span>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <aside class="control-panel" aria-label="시뮬레이션 입력">
+      <section class="panel-section">
+        <div class="section-title">
+          <span>01</span>
+          <h2>입력 변수</h2>
+        </div>
+
+        <div class="control-group" data-control="heightMm">
+          <div class="label-row">
+            <label for="heightRange">초기 높이 <b>H</b></label>
+            <span>mm</span>
+          </div>
+          <div class="control-line">
+            <input id="heightRange" type="range" min="200" max="1000" step="1" value="1000">
+            <input id="heightNumber" type="number" min="200" max="1000" step="1" value="1000">
+          </div>
+          <div class="range-row"><span>200</span><span>1000</span></div>
+        </div>
+
+        <div class="control-group" data-control="radiusMm">
+          <div class="label-row">
+            <label for="radiusRange">초기 반지름 <b>R<sub>e</sub></b></label>
+            <span>mm</span>
+          </div>
+          <div class="control-line">
+            <input id="radiusRange" type="range" min="2" max="30" step="0.01" value="4">
+            <input id="radiusNumber" type="number" min="2" max="30" step="0.01" value="4">
+          </div>
+          <div class="range-row"><span>2.00</span><span>30.00</span></div>
+        </div>
+
+        <div class="control-group" data-control="muPsi">
+          <div class="label-row">
+            <label for="muRange">전단 탄성률 <b>mu</b></label>
+            <span>psi</span>
+          </div>
+          <div class="control-line">
+            <input id="muRange" type="range" min="50" max="2000" step="1" value="400">
+            <input id="muNumber" type="number" min="50" max="2000" step="1" value="400">
+          </div>
+          <div class="range-row"><span>50</span><span>2000</span></div>
+        </div>
+
+        <div class="control-group" data-control="massKg">
+          <div class="label-row">
+            <label for="massRange">매달린 질량 <b>m</b></label>
+            <span>kg</span>
+          </div>
+          <div class="control-line">
+            <input id="massRange" type="range" min="0" max="2" step="0.001" value="0.3">
+            <input id="massNumber" type="number" min="0" max="2" step="0.001" value="0.3">
+          </div>
+          <div class="range-row"><span>0.000</span><span>2.000</span></div>
+        </div>
+
+        <div class="control-group" data-control="maxTurns">
+          <div class="label-row">
+            <label for="maxTurnsRange">최대 비틀림 <b>theta / 2pi</b></label>
+            <span>turns</span>
+          </div>
+          <div class="control-line">
+            <input id="maxTurnsRange" type="range" min="1" max="15" step="1" value="6">
+            <input id="maxTurnsNumber" type="number" min="1" max="15" step="1" value="6">
+          </div>
+          <div class="range-row"><span>1</span><span>15</span></div>
+        </div>
+      </section>
+
+      <section class="panel-section compact-section">
+        <div class="section-title">
+          <span>02</span>
+          <h2>계산 모드</h2>
+        </div>
+        <div class="segmented-control" role="radiogroup" aria-label="계산 모드">
+          <label>
+            <input type="radio" name="mode" value="twist_only">
+            <span>무하중</span>
+          </label>
+          <label>
+            <input type="radio" name="mode" value="force_twist" checked>
+            <span>하중 + 비틀림</span>
+          </label>
+        </div>
+        <label class="check-row">
+          <input id="showReference" type="checkbox" checked>
+          <span>변형 전 기준 원기둥</span>
+        </label>
+      </section>
+
+      <section class="panel-section compact-section">
+        <div class="section-title">
+          <span>03</span>
+          <h2>애니메이션</h2>
+        </div>
+        <div class="button-row">
+          <button id="playBtn" type="button" class="primary-button">
+            <span aria-hidden="true">▶</span>
+            <span>재생</span>
+          </button>
+          <button id="pauseBtn" type="button">
+            <span aria-hidden="true">Ⅱ</span>
+            <span>정지</span>
+          </button>
+          <button id="resetBtn" type="button">
+            <span aria-hidden="true">↻</span>
+            <span>초기화</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="panel-section compact-section">
+        <div class="section-title">
+          <span>04</span>
+          <h2>저장</h2>
+        </div>
+        <div class="button-row two-up">
+          <button id="csvBtn" type="button">
+            <span aria-hidden="true">CSV</span>
+            <span>데이터</span>
+          </button>
+          <button id="pngBtn" type="button">
+            <span aria-hidden="true">PNG</span>
+            <span>그림</span>
+          </button>
+        </div>
+      </section>
+    </aside>
+
+    <section class="simulation-panel" aria-label="3D 시각화와 수치 출력">
+      <div class="viewport-head">
+        <div>
+          <span class="panel-kicker">05</span>
+          <h2>3D 시각화</h2>
+        </div>
+        <div class="angle-badge" id="angleBadge">theta = 0.00 turns</div>
+      </div>
+
+      <div class="scene-frame">
+        <canvas id="sceneCanvas" aria-label="비틀린 고무 원기둥 시각화"></canvas>
+      </div>
+
+      <div class="turn-control">
+        <div class="label-row">
+          <label for="turnsRange">현재 비틀림</label>
+          <output id="turnsOutput" for="turnsRange">0.00 turns / 0 deg</output>
+        </div>
+        <input id="turnsRange" type="range" min="0" max="6" step="0.01" value="0">
+      </div>
+
+      <div class="readout-grid" aria-label="수치 출력">
+        <div><span>평형 높이 h</span><b id="heightReadout">--</b></div>
+        <div><span>평형 반지름 r</span><b id="radiusReadout">--</b></div>
+        <div><span>늘어난 길이 h - H</span><b id="elongationReadout">--</b></div>
+        <div><span>상대 높이 h / H</span><b id="relativeHeightReadout">--</b></div>
+        <div><span>초기 부피</span><b id="initialVolumeReadout">--</b></div>
+        <div><span>현재 부피</span><b id="currentVolumeReadout">--</b></div>
+        <div><span>부피비</span><b id="volumeRatioReadout">--</b></div>
+        <div><span>하중 F</span><b id="forceReadout">--</b></div>
+      </div>
+    </section>
+
+    <aside class="analysis-panel" aria-label="그래프와 방정식">
+      <section class="panel-section chart-section">
+        <div class="section-title">
+          <span>06</span>
+          <h2>그래프</h2>
+        </div>
+        <canvas id="chartCanvas" aria-label="포인팅 효과 계산 그래프"></canvas>
+      </section>
+
+      <section class="panel-section equation-section">
+        <div class="section-title">
+          <span>07</span>
+          <h2>지배 방정식</h2>
+        </div>
+        <div class="equation-list">
+          <div>
+            <span>무하중 비틀림</span>
+            <code>h* = H(1 + R_e^2 theta^2 / 4H^2)^(1/3)</code>
+          </div>
+          <div>
+            <span>가늘고 긴 근사</span>
+            <code>h - H ≈ R_e^2 theta^2 / 12H</code>
+          </div>
+          <div>
+            <span>하중 + 비틀림</span>
+            <code>(h/H)^3 - F/(mu pi R_e^2)(h/H)^2 - (1 + R_e^2 theta^2 / 4H^2) = 0</code>
+          </div>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
