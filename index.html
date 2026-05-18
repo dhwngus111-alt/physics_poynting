@@ -74,6 +74,18 @@
           <div class="range-row"><span>0.000</span><span>2.000</span></div>
         </div>
 
+        <div class="control-group" data-control="torqueNm">
+          <div class="label-row">
+            <label for="torqueRange">가한 토크 <b>M</b></label>
+            <span>N·m</span>
+          </div>
+          <div class="control-line">
+            <input id="torqueRange" type="range" min="0" max="0.2" step="0.0001" value="0.0415">
+            <input id="torqueNumber" type="number" min="0" max="0.2" step="0.0001" value="0.0415">
+          </div>
+          <div class="range-row"><span>0.0000</span><span>0.2000</span></div>
+        </div>
+
         <div class="control-group" data-control="maxTurns">
           <div class="label-row">
             <label for="maxTurnsRange">최대 비틀림 <b>theta / 2pi</b></label>
@@ -100,6 +112,10 @@
           <label>
             <input type="radio" name="mode" value="force_twist" checked>
             <span>하중 + 비틀림</span>
+          </label>
+          <label>
+            <input type="radio" name="mode" value="torque_control">
+            <span>토크 제어</span>
           </label>
         </div>
         <label class="check-row">
@@ -171,7 +187,8 @@
       <div class="readout-grid" aria-label="수치 출력">
         <div><span>평형 높이 h</span><b id="heightReadout">--</b></div>
         <div><span>평형 반지름 r</span><b id="radiusReadout">--</b></div>
-        <div><span>늘어난 길이 h - H</span><b id="elongationReadout">--</b></div>
+        <div><span>총 신장 h - H</span><b id="elongationReadout">--</b></div>
+        <div><span>비틀림 추가 신장 h(theta)-h(0)</span><b id="twistElongationReadout">--</b></div>
         <div><span>상대 높이 h / H</span><b id="relativeHeightReadout">--</b></div>
         <div><span>초기 부피</span><b id="initialVolumeReadout">--</b></div>
         <div><span>현재 부피</span><b id="currentVolumeReadout">--</b></div>
@@ -206,6 +223,10 @@
           <div>
             <span>하중 + 비틀림</span>
             <code>(h/H)^3 - F/(mu pi R_e^2)(h/H)^2 - (1 + R_e^2 theta^2 / 4H^2) = 0</code>
+          </div>
+          <div>
+            <span>토크 제어</span>
+            <code>(h/H)^3 - (F/(mu pi R_e^2) + M^2/(mu^2 pi^2 R_e^6))(h/H)^2 - 1 = 0, theta = 2hM/(mu pi R_e^4)</code>
           </div>
         </div>
       </section>
