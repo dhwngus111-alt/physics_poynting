@@ -18,6 +18,7 @@
     massKg: 0.3,
     currentTurns: 0,
     currentTorqueNm: 0,
+    language: "ko",
     mode: "force_twist",
     cameraAzimuth: -36,
     cameraElevation: 24
@@ -30,6 +31,141 @@
     massKg: { min: 0, max: 2, step: 0.001, digits: 3 }
   };
 
+  const translations = {
+    ko: {
+      documentTitle: "포인팅 효과 시뮬레이터",
+      langToggle: "English",
+      langToggleAria: "Switch language to English",
+      langToggleTitle: "English view",
+      eyebrow: "Zurlo et al. (2020) 기반",
+      title: "포인팅 효과 시뮬레이터",
+      controlsAria: "시뮬레이션 입력",
+      inputsTitle: "입력 변수",
+      heightLabel: "초기 높이 <b>H</b>",
+      radiusLabel: "초기 반지름 <b>R<sub>e</sub></b>",
+      muLabel: "전단 탄성률 <b>mu</b>",
+      massLabel: "매달린 질량 <b>m</b>",
+      modeTitle: "계산 모드",
+      modeTwist: "비틀림",
+      modeTorque: "토크",
+      animationTitle: "애니메이션",
+      play: "재생",
+      pause: "정지",
+      reset: "초기화",
+      simulationAria: "3D 시각화와 수치 출력",
+      visualizationTitle: "3D 시각화",
+      sceneCanvasAria: "비틀린 고무 원기둥 시각화",
+      readoutsAria: "수치 출력",
+      currentTwist: "현재 비틀림",
+      currentTorque: "현재 토크",
+      turnsUnit: "turns",
+      degUnit: "deg",
+      readoutHeight: "평형 높이 h",
+      readoutRadius: "평형 반지름 r",
+      readoutElongation: "전체 신장 h - H",
+      readoutTwistDelta: "비틀림 추가 신장 h(θ) - h(0)",
+      readoutRelativeHeight: "상대 높이 h / H",
+      readoutInitialVolume: "초기 부피",
+      readoutCurrentVolume: "현재 부피",
+      readoutVolumeRatio: "부피비",
+      readoutForce: "하중 F = mg",
+      readoutTorque: "토크 M",
+      analysisAria: "그래프와 방정식",
+      chartsTitle: "그래프",
+      chartCanvasAria: "포인팅 효과 계산 그래프",
+      equationsTitle: "지배 방정식",
+      equationTorsionOnly: "질량 0 비틀림",
+      equationApprox: "가늘고 긴 근사",
+      equationPrescribedTwist: "비틀림 각도 지정",
+      equationAppliedTorque: "토크 지정",
+      modeTorqueFull: "토크 지정",
+      modeTwistFull: "비틀림 각도 지정",
+      xLabelTorque: "토크 M (N m)",
+      xLabelTwist: "비틀림 횟수",
+      chartTotalTitle: "전체 신장: h - H",
+      chartTotalY: "stress-free 기준 (mm)",
+      chartTwistTitle: "비틀림 추가 신장: h(θ) - h(0)",
+      chartTwistY: "하중 후 기준 (mm)",
+      chartTotalSeries: "전체 신장",
+      chartTwistSeries: "추가 신장",
+      activeCurrent: "현재",
+      activeAdditional: "추가",
+      statusReady: "준비됨",
+      statusComputed: "평형 계산 완료",
+      statusModeChanged: "계산 모드 변경",
+      statusReset: "초기화 완료",
+      statusPlaying: "애니메이션 재생 중",
+      statusPaused: "일시정지됨",
+      statusComplete: "애니메이션 완료"
+    },
+    en: {
+      documentTitle: "The Poynting Effect Simulator",
+      langToggle: "한국어",
+      langToggleAria: "한국어로 보기",
+      langToggleTitle: "한국어 보기",
+      eyebrow: "Based on Zurlo et al. (2020)",
+      title: "The Poynting Effect Simulator",
+      controlsAria: "Simulation inputs",
+      inputsTitle: "Input Variables",
+      heightLabel: "Stress-free height <b>H</b>",
+      radiusLabel: "Stress-free radius <b>R<sub>e</sub></b>",
+      muLabel: "Shear modulus <b>mu</b>",
+      massLabel: "Attached mass <b>m</b>",
+      modeTitle: "Calculation Mode",
+      modeTwist: "Prescribed twist",
+      modeTorque: "Applied torque",
+      animationTitle: "Animation",
+      play: "Play",
+      pause: "Pause",
+      reset: "Reset",
+      simulationAria: "3D visualization and numerical readouts",
+      visualizationTitle: "3D Visualization",
+      sceneCanvasAria: "Twisted rubber cylinder visualization",
+      readoutsAria: "Numerical readouts",
+      currentTwist: "Current twist",
+      currentTorque: "Current torque",
+      turnsUnit: "turns",
+      degUnit: "deg",
+      readoutHeight: "Equilibrium height h",
+      readoutRadius: "Equilibrium radius r",
+      readoutElongation: "Total elongation h - H",
+      readoutTwistDelta: "Additional elongation h(theta) - h(0)",
+      readoutRelativeHeight: "Relative height h / H",
+      readoutInitialVolume: "Initial volume",
+      readoutCurrentVolume: "Current volume",
+      readoutVolumeRatio: "Volume ratio",
+      readoutForce: "Applied force F = mg",
+      readoutTorque: "Applied torque M",
+      analysisAria: "Graphs and equations",
+      chartsTitle: "Graphs",
+      chartCanvasAria: "Poynting effect calculation graphs",
+      equationsTitle: "Governing Equations",
+      equationTorsionOnly: "Torsion only",
+      equationApprox: "Slender-cylinder approximation",
+      equationPrescribedTwist: "Prescribed twist with force",
+      equationAppliedTorque: "Applied torque control",
+      modeTorqueFull: "Applied torque",
+      modeTwistFull: "Prescribed twist",
+      xLabelTorque: "Applied torque M (N m)",
+      xLabelTwist: "Twist turns",
+      chartTotalTitle: "Total elongation: h - H",
+      chartTotalY: "relative to stress-free state (mm)",
+      chartTwistTitle: "Additional elongation: h(theta) - h(0)",
+      chartTwistY: "relative to loaded state (mm)",
+      chartTotalSeries: "Total elongation",
+      chartTwistSeries: "Additional elongation",
+      activeCurrent: "current",
+      activeAdditional: "additional",
+      statusReady: "Ready",
+      statusComputed: "Equilibrium computed",
+      statusModeChanged: "Calculation mode changed",
+      statusReset: "Reset complete",
+      statusPlaying: "Animation playing",
+      statusPaused: "Paused",
+      statusComplete: "Animation complete"
+    }
+  };
+
   const els = {};
   let state = Object.assign({}, defaults);
   let cachedData = null;
@@ -40,8 +176,10 @@
 
   function init() {
     cacheElements();
+    state.language = getInitialLanguage();
     bindControls();
     els.pauseBtn.disabled = true;
+    applyLanguage(false);
     syncControls();
     resizeAndRender();
 
@@ -63,6 +201,7 @@
       muNumber: document.getElementById("muNumber"),
       massRange: document.getElementById("massRange"),
       massNumber: document.getElementById("massNumber"),
+      langToggle: document.getElementById("langToggle"),
       turnsRange: document.getElementById("turnsRange"),
       controlSliderLabel: document.getElementById("controlSliderLabel"),
       turnsOutput: document.getElementById("turnsOutput"),
@@ -100,14 +239,24 @@
       } else {
         state.currentTurns = clamp(parseFloat(els.turnsRange.value), 0, constants.twistControlMaxTurns);
       }
-      renderAll("평형 계산 완료");
+      renderAll(t("statusComputed"));
     });
 
     document.querySelectorAll("input[name='mode']").forEach(function (radio) {
       radio.addEventListener("change", function () {
         state.mode = radio.value;
-        renderAll("계산 모드 변경");
+        renderAll(t("statusModeChanged"));
       });
+    });
+
+    els.langToggle.addEventListener("click", function () {
+      state.language = state.language === "ko" ? "en" : "ko";
+      try {
+        window.localStorage.setItem("poynting-language", state.language);
+      } catch (error) {
+        void error;
+      }
+      applyLanguage(true);
     });
 
     els.playBtn.addEventListener("click", playAnimation);
@@ -121,6 +270,46 @@
     window.addEventListener("pointerup", endSceneDrag);
   }
 
+  function getInitialLanguage() {
+    try {
+      const saved = window.localStorage.getItem("poynting-language");
+      if (saved && translations[saved]) {
+        return saved;
+      }
+    } catch (error) {
+      void error;
+    }
+    return defaults.language;
+  }
+
+  function applyLanguage(shouldRender) {
+    document.documentElement.lang = state.language;
+    document.title = t("documentTitle");
+    els.langToggle.textContent = t("langToggle");
+    els.langToggle.setAttribute("aria-label", t("langToggleAria"));
+    els.langToggle.setAttribute("title", t("langToggleTitle"));
+
+    document.querySelectorAll("[data-i18n]").forEach(function (element) {
+      element.textContent = t(element.dataset.i18n);
+    });
+    document.querySelectorAll("[data-i18n-html]").forEach(function (element) {
+      element.innerHTML = t(element.dataset.i18nHtml);
+    });
+    document.querySelectorAll("[data-i18n-aria]").forEach(function (element) {
+      element.setAttribute("aria-label", t(element.dataset.i18nAria));
+    });
+
+    if (shouldRender) {
+      syncControls();
+      renderCore();
+    }
+  }
+
+  function t(key) {
+    const dictionary = translations[state.language] || translations.ko;
+    return dictionary[key] || translations.ko[key] || key;
+  }
+
   function bindPair(key, rangeEl, numberEl) {
     const applyValue = function (raw) {
       stopAnimation(false);
@@ -131,7 +320,7 @@
       }
       state[key] = value;
       syncControls();
-      renderAll("평형 계산 완료");
+      renderAll(t("statusComputed"));
     };
 
     rangeEl.addEventListener("input", function () {
@@ -153,24 +342,24 @@
       const params = getParams();
       const active = computeActiveState(params);
       const sliderMax = Math.max(constants.torqueControlMaxNm, 0.0001);
-      els.controlSliderLabel.textContent = "현재 토크";
+      els.controlSliderLabel.textContent = t("currentTorque");
       els.turnsRange.max = formatNumber(sliderMax, 6);
       els.turnsRange.step = formatNumber(Math.max(sliderMax / 400, 0.000001), 6);
       els.turnsRange.value = formatNumber(state.currentTorqueNm, 6);
-      els.turnsOutput.textContent = `${formatNumber(state.currentTorqueNm, 6)} N m / ${formatNumber(active.turns, 2)} turns`;
+      els.turnsOutput.textContent = `${formatNumber(state.currentTorqueNm, 6)} N m / ${formatNumber(active.turns, 2)} ${t("turnsUnit")}`;
       els.controlMinLabel.textContent = "0";
       els.controlMaxLabel.textContent = `${formatNumber(sliderMax, 6)} N m`;
       els.angleBadge.textContent = `M = ${formatNumber(state.currentTorqueNm, 6)} N m`;
     } else {
       state.currentTurns = clamp(state.currentTurns, 0, constants.twistControlMaxTurns);
-      els.controlSliderLabel.textContent = "현재 비틀림";
+      els.controlSliderLabel.textContent = t("currentTwist");
       els.turnsRange.max = String(constants.twistControlMaxTurns);
       els.turnsRange.step = "0.01";
       els.turnsRange.value = formatNumber(state.currentTurns, 2);
-      els.turnsOutput.textContent = `${formatNumber(state.currentTurns, 2)} turns / ${formatNumber(state.currentTurns * 360, 0)} deg`;
+      els.turnsOutput.textContent = `${formatNumber(state.currentTurns, 2)} ${t("turnsUnit")} / ${formatNumber(state.currentTurns * 360, 0)} ${t("degUnit")}`;
       els.controlMinLabel.textContent = "0";
-      els.controlMaxLabel.textContent = `${formatNumber(constants.twistControlMaxTurns, 0)} turns`;
-      els.angleBadge.textContent = `theta = ${formatNumber(state.currentTurns, 2)} turns`;
+      els.controlMaxLabel.textContent = `${formatNumber(constants.twistControlMaxTurns, 0)} ${t("turnsUnit")}`;
+      els.angleBadge.textContent = `theta = ${formatNumber(state.currentTurns, 2)} ${t("turnsUnit")}`;
     }
     document.querySelectorAll("input[name='mode']").forEach(function (radio) {
       radio.checked = radio.value === state.mode;
@@ -185,9 +374,10 @@
 
   function resetApp() {
     stopAnimation(false);
-    state = Object.assign({}, defaults);
+    const language = state.language;
+    state = Object.assign({}, defaults, { language });
     syncControls();
-    renderAll("초기화 완료");
+    renderAll(t("statusReset"));
   }
 
   function playAnimation() {
@@ -209,7 +399,7 @@
     }
     els.playBtn.disabled = true;
     els.pauseBtn.disabled = false;
-    setStatus("애니메이션 재생 중", true);
+    setStatus(t("statusPlaying"), true);
 
     function tick(now) {
       const t = clamp((now - start) / duration, 0, 1);
@@ -226,8 +416,8 @@
         animationFrame = 0;
         els.playBtn.disabled = false;
         els.pauseBtn.disabled = true;
-        setStatus("애니메이션 완료", false);
-        renderAll("애니메이션 완료");
+        setStatus(t("statusComplete"), false);
+        renderAll(t("statusComplete"));
       }
     }
 
@@ -241,7 +431,7 @@
       els.playBtn.disabled = false;
       els.pauseBtn.disabled = true;
       if (updateStatus) {
-        setStatus("일시정지됨", false);
+        setStatus(t("statusPaused"), false);
       }
     }
   }
@@ -274,7 +464,7 @@
   function resizeAndRender() {
     fitCanvas(els.sceneCanvas);
     fitCanvas(els.chartCanvas);
-    renderAll("준비됨");
+    renderAll(t("statusReady"));
   }
 
   function renderAll(statusText) {
@@ -811,22 +1001,22 @@
     const xValues = torqueMode ? data.torqueNm : data.turns;
     const xMax = torqueMode ? params.maxTorqueNm : params.maxTurns;
     const activeX = torqueMode ? active.torqueNm : active.turns;
-    const xLabel = torqueMode ? "토크 M (N m)" : "비틀림 횟수";
+    const xLabel = torqueMode ? t("xLabelTorque") : t("xLabelTwist");
     const xDigits = torqueMode ? 4 : 1;
     const totalSeries = torqueMode
-      ? [{ values: data.torqueDeltaMm, color: "#2f7b68", dash: [], label: "전체 신장" }]
-      : [{ values: data.loadedDeltaMm, color: "#c84a38", dash: [], label: "전체 신장" }];
+      ? [{ values: data.torqueDeltaMm, color: "#2f7b68", dash: [], label: t("chartTotalSeries") }]
+      : [{ values: data.loadedDeltaMm, color: "#c84a38", dash: [], label: t("chartTotalSeries") }];
     const twistSeries = torqueMode
-      ? [{ values: data.torqueTwistDeltaMm, color: "#2368a8", dash: [], label: "추가 신장" }]
-      : [{ values: data.loadedTwistDeltaMm, color: "#2368a8", dash: [], label: "추가 신장" }];
+      ? [{ values: data.torqueTwistDeltaMm, color: "#2368a8", dash: [], label: t("chartTwistSeries") }]
+      : [{ values: data.loadedTwistDeltaMm, color: "#2368a8", dash: [], label: t("chartTwistSeries") }];
 
     drawSingleChart(ctx, {
       x: 0,
       y: 0,
       w: chartWidth,
       h: chartHeight,
-      title: "전체 신장: h - H",
-      yLabel: "stress-free 기준 (mm)",
+      title: t("chartTotalTitle"),
+      yLabel: t("chartTotalY"),
       xLabel,
       xDigits,
       xMax,
@@ -834,7 +1024,7 @@
       activeY: active.deltaMm,
       activeX,
       xValues,
-      activeLabel: `현재 ${formatNumber(active.deltaMm, 3)} mm`
+      activeLabel: `${t("activeCurrent")} ${formatNumber(active.deltaMm, 3)} mm`
     });
 
     drawSingleChart(ctx, {
@@ -842,8 +1032,8 @@
       y: chartHeight + gap,
       w: chartWidth,
       h: chartHeight,
-      title: "비틀림 추가 신장: h(θ) - h(0)",
-      yLabel: "하중 후 기준 (mm)",
+      title: t("chartTwistTitle"),
+      yLabel: t("chartTwistY"),
       xLabel,
       xDigits,
       xMax,
@@ -851,7 +1041,7 @@
       activeY: active.twistDeltaMm,
       activeX,
       xValues,
-      activeLabel: `추가 ${formatNumber(active.twistDeltaMm, 3)} mm`
+      activeLabel: `${t("activeAdditional")} ${formatNumber(active.twistDeltaMm, 3)} mm`
     });
   }
 
@@ -897,7 +1087,8 @@
     ctx.font = "800 11px Inter, system-ui, sans-serif";
     ctx.fillStyle = "#657070";
     ctx.fillText(config.yLabel, config.x + 14, plot.y + 14);
-    ctx.fillText(config.xLabel || "", plot.x + plot.w - 92, config.y + config.h - 14);
+    const xLabel = config.xLabel || "";
+    ctx.fillText(xLabel, Math.max(plot.x, plot.x + plot.w - ctx.measureText(xLabel).width), config.y + config.h - 14);
 
     ctx.strokeStyle = "#d9d2c4";
     ctx.lineWidth = 1;
@@ -1083,6 +1274,6 @@
   }
 
   function getModeText(mode) {
-    return mode === "torque_control" ? "토크 지정" : "비틀림 각도 지정";
+    return mode === "torque_control" ? t("modeTorqueFull") : t("modeTwistFull");
   }
 })();

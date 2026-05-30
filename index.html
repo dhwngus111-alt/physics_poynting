@@ -8,23 +8,24 @@
 </head>
 <body>
   <header class="topbar">
-    <div>
-      <p class="eyebrow">Zurlo et al. (2020) 기반</p>
-      <h1>포인팅 효과 시뮬레이터</h1>
+    <div class="topbar-title">
+      <p class="eyebrow" data-i18n="eyebrow">Zurlo et al. (2020) 기반</p>
+      <h1 data-i18n="title">포인팅 효과 시뮬레이터</h1>
     </div>
+    <button id="langToggle" class="language-toggle" type="button" aria-label="Switch language to English">English</button>
   </header>
 
   <main class="app-shell">
-    <aside class="control-panel" aria-label="시뮬레이션 입력">
+    <aside class="control-panel" aria-label="시뮬레이션 입력" data-i18n-aria="controlsAria">
       <section class="panel-section">
         <div class="section-title">
           <span>01</span>
-          <h2>입력 변수</h2>
+          <h2 data-i18n="inputsTitle">입력 변수</h2>
         </div>
 
         <div class="control-group" data-control="heightMm">
           <div class="label-row">
-            <label for="heightRange">초기 높이 <b>H</b></label>
+            <label for="heightRange" data-i18n-html="heightLabel">초기 높이 <b>H</b></label>
             <span>mm</span>
           </div>
           <div class="control-line">
@@ -36,7 +37,7 @@
 
         <div class="control-group" data-control="radiusMm">
           <div class="label-row">
-            <label for="radiusRange">초기 반지름 <b>R<sub>e</sub></b></label>
+            <label for="radiusRange" data-i18n-html="radiusLabel">초기 반지름 <b>R<sub>e</sub></b></label>
             <span>mm</span>
           </div>
           <div class="control-line">
@@ -48,7 +49,7 @@
 
         <div class="control-group" data-control="muPsi">
           <div class="label-row">
-            <label for="muRange">전단 탄성률 <b>mu</b></label>
+            <label for="muRange" data-i18n-html="muLabel">전단 탄성률 <b>mu</b></label>
             <span>psi</span>
           </div>
           <div class="control-line">
@@ -60,7 +61,7 @@
 
         <div class="control-group" data-control="massKg">
           <div class="label-row">
-            <label for="massRange">매달린 질량 <b>m</b></label>
+            <label for="massRange" data-i18n-html="massLabel">매달린 질량 <b>m</b></label>
             <span>kg</span>
           </div>
           <div class="control-line">
@@ -75,16 +76,16 @@
       <section class="panel-section compact-section">
         <div class="section-title">
           <span>02</span>
-          <h2>계산 모드</h2>
+          <h2 data-i18n="modeTitle">계산 모드</h2>
         </div>
-        <div class="segmented-control" role="radiogroup" aria-label="계산 모드">
+        <div class="segmented-control" role="radiogroup" aria-label="계산 모드" data-i18n-aria="modeTitle">
           <label>
             <input type="radio" name="mode" value="force_twist" checked>
-            <span>비틀림</span>
+            <span data-i18n="modeTwist">비틀림</span>
           </label>
           <label>
             <input type="radio" name="mode" value="torque_control">
-            <span>토크</span>
+            <span data-i18n="modeTorque">토크</span>
           </label>
         </div>
       </section>
@@ -92,37 +93,37 @@
       <section class="panel-section compact-section">
         <div class="section-title">
           <span>03</span>
-          <h2>애니메이션</h2>
+          <h2 data-i18n="animationTitle">애니메이션</h2>
         </div>
         <div class="button-row">
           <button id="playBtn" type="button" class="primary-button">
             <span aria-hidden="true">▶</span>
-            <span>재생</span>
+            <span data-i18n="play">재생</span>
           </button>
           <button id="pauseBtn" type="button">
             <span aria-hidden="true">Ⅱ</span>
-            <span>정지</span>
+            <span data-i18n="pause">정지</span>
           </button>
           <button id="resetBtn" type="button">
             <span aria-hidden="true">↻</span>
-            <span>초기화</span>
+            <span data-i18n="reset">초기화</span>
           </button>
         </div>
       </section>
 
     </aside>
 
-    <section class="simulation-panel" aria-label="3D 시각화와 수치 출력">
+    <section class="simulation-panel" aria-label="3D 시각화와 수치 출력" data-i18n-aria="simulationAria">
       <div class="viewport-head">
         <div>
           <span class="panel-kicker">04</span>
-          <h2>3D 시각화</h2>
+          <h2 data-i18n="visualizationTitle">3D 시각화</h2>
         </div>
         <div class="angle-badge" id="angleBadge">theta = 0.00 turns</div>
       </div>
 
       <div class="scene-frame">
-        <canvas id="sceneCanvas" aria-label="비틀린 고무 원기둥 시각화"></canvas>
+        <canvas id="sceneCanvas" aria-label="비틀린 고무 원기둥 시각화" data-i18n-aria="sceneCanvasAria"></canvas>
       </div>
 
       <div class="turn-control">
@@ -137,49 +138,49 @@
         </div>
       </div>
 
-      <div class="readout-grid" aria-label="수치 출력">
-        <div><span>평형 높이 h</span><b id="heightReadout">--</b></div>
-        <div><span>평형 반지름 r</span><b id="radiusReadout">--</b></div>
-        <div><span>전체 신장 h - H</span><b id="elongationReadout">--</b></div>
-        <div><span>비틀림 추가 신장 h(θ) - h(0)</span><b id="twistDeltaReadout">--</b></div>
-        <div><span>상대 높이 h / H</span><b id="relativeHeightReadout">--</b></div>
-        <div><span>초기 부피</span><b id="initialVolumeReadout">--</b></div>
-        <div><span>현재 부피</span><b id="currentVolumeReadout">--</b></div>
-        <div><span>부피비</span><b id="volumeRatioReadout">--</b></div>
-        <div><span>하중 F = mg</span><b id="forceReadout">--</b></div>
-        <div><span>토크 M</span><b id="torqueReadout">--</b></div>
+      <div class="readout-grid" aria-label="수치 출력" data-i18n-aria="readoutsAria">
+        <div><span data-i18n="readoutHeight">평형 높이 h</span><b id="heightReadout">--</b></div>
+        <div><span data-i18n="readoutRadius">평형 반지름 r</span><b id="radiusReadout">--</b></div>
+        <div><span data-i18n="readoutElongation">전체 신장 h - H</span><b id="elongationReadout">--</b></div>
+        <div><span data-i18n="readoutTwistDelta">비틀림 추가 신장 h(θ) - h(0)</span><b id="twistDeltaReadout">--</b></div>
+        <div><span data-i18n="readoutRelativeHeight">상대 높이 h / H</span><b id="relativeHeightReadout">--</b></div>
+        <div><span data-i18n="readoutInitialVolume">초기 부피</span><b id="initialVolumeReadout">--</b></div>
+        <div><span data-i18n="readoutCurrentVolume">현재 부피</span><b id="currentVolumeReadout">--</b></div>
+        <div><span data-i18n="readoutVolumeRatio">부피비</span><b id="volumeRatioReadout">--</b></div>
+        <div><span data-i18n="readoutForce">하중 F = mg</span><b id="forceReadout">--</b></div>
+        <div><span data-i18n="readoutTorque">토크 M</span><b id="torqueReadout">--</b></div>
       </div>
     </section>
 
-    <aside class="analysis-panel" aria-label="그래프와 방정식">
+    <aside class="analysis-panel" aria-label="그래프와 방정식" data-i18n-aria="analysisAria">
       <section class="panel-section chart-section">
         <div class="section-title">
           <span>05</span>
-          <h2>그래프</h2>
+          <h2 data-i18n="chartsTitle">그래프</h2>
         </div>
-        <canvas id="chartCanvas" aria-label="포인팅 효과 계산 그래프"></canvas>
+        <canvas id="chartCanvas" aria-label="포인팅 효과 계산 그래프" data-i18n-aria="chartCanvasAria"></canvas>
       </section>
 
       <section class="panel-section equation-section">
         <div class="section-title">
           <span>06</span>
-          <h2>지배 방정식</h2>
+          <h2 data-i18n="equationsTitle">지배 방정식</h2>
         </div>
         <div class="equation-list">
           <div>
-            <span>질량 0 비틀림</span>
+            <span data-i18n="equationTorsionOnly">질량 0 비틀림</span>
             <code>h* = H(1 + R_e^2 theta^2 / 4H^2)^(1/3)</code>
           </div>
           <div>
-            <span>가늘고 긴 근사</span>
+            <span data-i18n="equationApprox">가늘고 긴 근사</span>
             <code>h - H ≈ R_e^2 theta^2 / 12H</code>
           </div>
           <div>
-            <span>비틀림 각도 지정</span>
+            <span data-i18n="equationPrescribedTwist">비틀림 각도 지정</span>
             <code>(h/H)^3 - F/(mu pi R_e^2)(h/H)^2 - (1 + R_e^2 theta^2 / 4H^2) = 0</code>
           </div>
           <div>
-            <span>토크 지정</span>
+            <span data-i18n="equationAppliedTorque">토크 지정</span>
             <code>(h/H)^3 - (F/(mu pi R_e^2) + M^2/(mu^2 pi^2 R_e^6))(h/H)^2 - 1 = 0, theta = 2hM/(mu pi R_e^4)</code>
           </div>
         </div>
