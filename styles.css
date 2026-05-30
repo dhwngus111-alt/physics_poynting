@@ -80,7 +80,7 @@ button:disabled {
   padding: 18px 22px 16px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 18px;
 }
 
@@ -106,33 +106,6 @@ h1 {
 h2 {
   font-size: 16px;
   line-height: 1.2;
-}
-
-.status-pill {
-  min-width: 180px;
-  min-height: 38px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: rgba(255, 253, 248, 0.82);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  padding: 0 14px;
-  box-shadow: 0 8px 24px rgba(42, 36, 25, 0.08);
-  color: #354040;
-  font-weight: 800;
-}
-
-.status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--green);
-}
-
-.status-dot.is-playing {
-  background: var(--accent);
 }
 
 .app-shell {
@@ -257,7 +230,7 @@ input[type="number"] {
 
 .segmented-control {
   display: grid;
-  grid-template-columns: 1fr 1.35fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
   padding: 4px;
   border: 1px solid var(--line);
@@ -293,29 +266,10 @@ input[type="number"] {
   box-shadow: 0 6px 16px rgba(42, 36, 25, 0.10);
 }
 
-.check-row {
-  margin-top: 12px;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  color: var(--ink);
-  font-weight: 800;
-}
-
-.check-row input {
-  width: 17px;
-  height: 17px;
-  accent-color: var(--green);
-}
-
 .button-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-}
-
-.button-row.two-up {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .simulation-panel {
@@ -372,6 +326,10 @@ canvas {
   margin-top: 8px;
 }
 
+.control-range-row {
+  margin-top: 8px;
+}
+
 .readout-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -404,14 +362,14 @@ canvas {
 }
 
 .chart-section {
-  min-height: 620px;
+  min-height: 560px;
   flex: 1;
   display: grid;
-  grid-template-rows: auto minmax(530px, 1fr);
+  grid-template-rows: auto minmax(470px, 1fr);
 }
 
 #chartCanvas {
-  min-height: 530px;
+  min-height: 470px;
 }
 
 .equation-section {
@@ -460,12 +418,12 @@ canvas {
   }
 
   .chart-section {
-    min-height: 520px;
-    grid-template-rows: auto minmax(430px, 1fr);
+    min-height: 500px;
+    grid-template-rows: auto minmax(410px, 1fr);
   }
 
   #chartCanvas {
-    min-height: 430px;
+    min-height: 410px;
   }
 }
 
@@ -473,10 +431,6 @@ canvas {
   .topbar {
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  .status-pill {
-    justify-content: flex-start;
   }
 
   .app-shell,
@@ -522,10 +476,6 @@ canvas {
   }
 
   .button-row {
-    grid-template-columns: 1fr;
-  }
-
-  .button-row.two-up {
     grid-template-columns: 1fr;
   }
 

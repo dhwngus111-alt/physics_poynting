@@ -6,7 +6,9 @@
   const constants = {
     g: 9.81,
     psiToPa: 6894.76,
-    sampleCount: 240
+    sampleCount: 240,
+    twistControlMaxTurns: 6,
+    torqueControlMaxNm: 0.04143536
   };
 
   const defaults = {
@@ -14,10 +16,9 @@
     radiusMm: 4,
     muPsi: 400,
     massKg: 0.3,
-    maxTurns: 6,
     currentTurns: 0,
+    currentTorqueNm: 0,
     mode: "force_twist",
-    showReference: true,
     cameraAzimuth: -36,
     cameraElevation: 24
   };
@@ -26,8 +27,7 @@
     heightMm: { min: 200, max: 1000, step: 1, digits: 0 },
     radiusMm: { min: 2, max: 30, step: 0.01, digits: 2 },
     muPsi: { min: 50, max: 2000, step: 1, digits: 0 },
-    massKg: { min: 0, max: 2, step: 0.001, digits: 3 },
-    maxTurns: { min: 1, max: 15, step: 1, digits: 0 }
+    massKg: { min: 0, max: 2, step: 0.001, digits: 3 }
   };
 
   const els = {};
@@ -63,29 +63,27 @@
       muNumber: document.getElementById("muNumber"),
       massRange: document.getElementById("massRange"),
       massNumber: document.getElementById("massNumber"),
-      maxTurnsRange: document.getElementById("maxTurnsRange"),
-      maxTurnsNumber: document.getElementById("maxTurnsNumber"),
       turnsRange: document.getElementById("turnsRange"),
+      controlSliderLabel: document.getElementById("controlSliderLabel"),
       turnsOutput: document.getElementById("turnsOutput"),
-      showReference: document.getElementById("showReference"),
+      controlMinLabel: document.getElementById("controlMinLabel"),
+      controlMaxLabel: document.getElementById("controlMaxLabel"),
       playBtn: document.getElementById("playBtn"),
       pauseBtn: document.getElementById("pauseBtn"),
       resetBtn: document.getElementById("resetBtn"),
-      csvBtn: document.getElementById("csvBtn"),
-      pngBtn: document.getElementById("pngBtn"),
       sceneCanvas: document.getElementById("sceneCanvas"),
       chartCanvas: document.getElementById("chartCanvas"),
-      statusDot: document.getElementById("statusDot"),
-      statusText: document.getElementById("statusText"),
       angleBadge: document.getElementById("angleBadge"),
       heightReadout: document.getElementById("heightReadout"),
       radiusReadout: document.getElementById("radiusReadout"),
       elongationReadout: document.getElementById("elongationReadout"),
+      twistDeltaReadout: document.getElementById("twistDeltaReadout"),
       relativeHeightReadout: document.getElementById("relativeHeightReadout"),
       initialVolumeReadout: document.getElementById("initialVolumeReadout"),
       currentVolumeReadout: document.getElementById("currentVolumeReadout"),
       volumeRatioReadout: document.getElementById("volumeRatioReadout"),
-      forceReadout: document.getElementById("forceReadout")
+      forceReadout: document.getElementById("forceReadout"),
+      torqueReadout: document.getElementById("torqueReadout")
     });
   }
 
@@ -94,11 +92,14 @@
     bindPair("radiusMm", els.radiusRange, els.radiusNumber);
     bindPair("muPsi", els.muRange, els.muNumber);
     bindPair("massKg", els.massRange, els.massNumber);
-    bindPair("maxTurns", els.maxTurnsRange, els.maxTurnsNumber);
 
     els.turnsRange.addEventListener("input", function () {
       stopAnimation(false);
-      state.currentTurns = clamp(parseFloat(els.turnsRange.value), 0, state.maxTurns);
+      if (state.mode === "torque_control") {
+        state.currentTorqueNm = clamp(parseFloat(els.turnsRange.value), 0, constants.torqueControlMaxNm);
+      } else {
+        state.currentTurns = clamp(parseFloat(els.turnsRange.value), 0, constants.twistControlMaxTurns);
+      }
       renderAll("평형 계산 완료");
     });
 
@@ -109,18 +110,11 @@
       });
     });
 
-    els.showReference.addEventListener("change", function () {
-      state.showReference = els.showReference.checked;
-      renderAll("표시 옵션 변경");
-    });
-
     els.playBtn.addEventListener("click", playAnimation);
     els.pauseBtn.addEventListener("click", function () {
       stopAnimation(true);
     });
     els.resetBtn.addEventListener("click", resetApp);
-    els.csvBtn.addEventListener("click", downloadCsv);
-    els.pngBtn.addEventListener("click", downloadPng);
 
     els.sceneCanvas.addEventListener("pointerdown", beginSceneDrag);
     window.addEventListener("pointermove", moveSceneDrag);
@@ -134,11 +128,6 @@
       let value = clamp(parseFloat(raw), spec.min, spec.max);
       if (!Number.isFinite(value)) {
         value = defaults[key];
-      }
-      if (key === "maxTurns") {
-        value = Math.round(value);
-        state.currentTurns = clamp(state.currentTurns, 0, value);
-        els.turnsRange.max = String(value);
       }
       state[key] = value;
       syncControls();
@@ -158,14 +147,31 @@
     setPairValue(els.radiusRange, els.radiusNumber, state.radiusMm, ranges.radiusMm.digits);
     setPairValue(els.muRange, els.muNumber, state.muPsi, ranges.muPsi.digits);
     setPairValue(els.massRange, els.massNumber, state.massKg, ranges.massKg.digits);
-    setPairValue(els.maxTurnsRange, els.maxTurnsNumber, state.maxTurns, ranges.maxTurns.digits);
 
-    els.turnsRange.max = String(state.maxTurns);
-    els.turnsRange.value = formatNumber(state.currentTurns, 2);
-    els.turnsOutput.textContent = `${formatNumber(state.currentTurns, 2)} turns / ${formatNumber(state.currentTurns * 360, 0)} deg`;
-    els.angleBadge.textContent = `theta = ${formatNumber(state.currentTurns, 2)} turns`;
-    els.showReference.checked = state.showReference;
-
+    if (state.mode === "torque_control") {
+      state.currentTorqueNm = clamp(state.currentTorqueNm, 0, constants.torqueControlMaxNm);
+      const params = getParams();
+      const active = computeActiveState(params);
+      const sliderMax = Math.max(constants.torqueControlMaxNm, 0.0001);
+      els.controlSliderLabel.textContent = "현재 토크";
+      els.turnsRange.max = formatNumber(sliderMax, 6);
+      els.turnsRange.step = formatNumber(Math.max(sliderMax / 400, 0.000001), 6);
+      els.turnsRange.value = formatNumber(state.currentTorqueNm, 6);
+      els.turnsOutput.textContent = `${formatNumber(state.currentTorqueNm, 6)} N m / ${formatNumber(active.turns, 2)} turns`;
+      els.controlMinLabel.textContent = "0";
+      els.controlMaxLabel.textContent = `${formatNumber(sliderMax, 6)} N m`;
+      els.angleBadge.textContent = `M = ${formatNumber(state.currentTorqueNm, 6)} N m`;
+    } else {
+      state.currentTurns = clamp(state.currentTurns, 0, constants.twistControlMaxTurns);
+      els.controlSliderLabel.textContent = "현재 비틀림";
+      els.turnsRange.max = String(constants.twistControlMaxTurns);
+      els.turnsRange.step = "0.01";
+      els.turnsRange.value = formatNumber(state.currentTurns, 2);
+      els.turnsOutput.textContent = `${formatNumber(state.currentTurns, 2)} turns / ${formatNumber(state.currentTurns * 360, 0)} deg`;
+      els.controlMinLabel.textContent = "0";
+      els.controlMaxLabel.textContent = `${formatNumber(constants.twistControlMaxTurns, 0)} turns`;
+      els.angleBadge.textContent = `theta = ${formatNumber(state.currentTurns, 2)} turns`;
+    }
     document.querySelectorAll("input[name='mode']").forEach(function (radio) {
       radio.checked = radio.value === state.mode;
     });
@@ -188,19 +194,30 @@
     if (animationFrame) {
       return;
     }
-    const from = state.currentTurns >= state.maxTurns ? 0 : state.currentTurns;
-    const to = state.maxTurns;
+    const torqueMode = state.mode === "torque_control";
+    const current = torqueMode ? state.currentTorqueNm : state.currentTurns;
+    const maxControl = torqueMode ? constants.torqueControlMaxNm : constants.twistControlMaxTurns;
+    const from = current >= maxControl ? 0 : current;
+    const to = maxControl;
     const start = performance.now();
-    const duration = Math.max(1800, 620 * (to - from));
+    const duration = torqueMode ? 4200 : Math.max(1800, 620 * (to - from));
 
-    state.currentTurns = from;
+    if (torqueMode) {
+      state.currentTorqueNm = from;
+    } else {
+      state.currentTurns = from;
+    }
     els.playBtn.disabled = true;
     els.pauseBtn.disabled = false;
     setStatus("애니메이션 재생 중", true);
 
     function tick(now) {
       const t = clamp((now - start) / duration, 0, 1);
-      state.currentTurns = from + (to - from) * easeInOut(t);
+      if (torqueMode) {
+        state.currentTorqueNm = from + (to - from) * easeInOut(t);
+      } else {
+        state.currentTurns = from + (to - from) * easeInOut(t);
+      }
       syncControls();
       renderCore();
       if (t < 1) {
@@ -272,7 +289,7 @@
       cachedData = computePoyntingData(getParams());
     }
     const params = getParams();
-    const active = computeActiveState(params, state.currentTurns);
+    const active = computeActiveState(params);
     drawScene(params, active);
     drawCharts(params, cachedData, active);
     updateReadouts(params, active, cachedData);
@@ -291,9 +308,9 @@
       muPa,
       massKg: state.massKg,
       forceN: state.massKg * constants.g,
-      maxTurns: state.maxTurns,
-      mode: state.mode,
-      showReference: state.showReference
+      maxTurns: constants.twistControlMaxTurns,
+      maxTorqueNm: constants.torqueControlMaxNm,
+      mode: state.mode
     };
   }
 
@@ -310,68 +327,143 @@
       unloadedTwistDeltaMm: [],
       loadedTwistDeltaMm: [],
       approxDeltaMm: [],
+      requiredTorqueNm: [],
+      torqueNm: [],
+      torqueThetaRad: [],
+      torqueTurns: [],
+      torqueHeightM: [],
+      torqueRadiusM: [],
+      torqueDeltaMm: [],
+      torqueTwistDeltaMm: [],
       initialVolumeM3: Math.PI * params.radius * params.radius * params.height
     };
 
-    const aParam = params.forceN === 0 ? 0 : params.forceN / (params.muPa * Math.PI * params.radius * params.radius);
+    const aParam = forceCoefficient(params);
     let loadedZero = 0;
     let unloadedZero = 0;
+    let torqueZero = 0;
 
     for (let i = 0; i < constants.sampleCount; i += 1) {
       const turns = params.maxTurns * i / (constants.sampleCount - 1);
-      const theta = turns * TWO_PI;
-      const bParam = Math.pow(params.radius * theta, 2) / (4 * params.height * params.height);
-      const unloadedHeight = params.height * Math.pow(1 + bParam, 1 / 3);
-      const loadedHeight = params.height * solveLoadedLambda(aParam, bParam);
-      const unloadedRadius = Math.sqrt(params.height / unloadedHeight) * params.radius;
-      const loadedRadius = Math.sqrt(params.height / loadedHeight) * params.radius;
+      const twist = computeTwistResponse(params, turns, aParam);
+      const torqueNm = params.maxTorqueNm * i / (constants.sampleCount - 1);
+      const torque = computeTorqueResponse(params, torqueNm, aParam);
 
       if (i === 0) {
-        loadedZero = loadedHeight;
-        unloadedZero = unloadedHeight;
+        loadedZero = twist.loadedHeight;
+        unloadedZero = twist.unloadedHeight;
+        torqueZero = torque.height;
       }
 
       data.turns.push(turns);
-      data.thetaRad.push(theta);
-      data.unloadedHeightM.push(unloadedHeight);
-      data.loadedHeightM.push(loadedHeight);
-      data.unloadedRadiusM.push(unloadedRadius);
-      data.loadedRadiusM.push(loadedRadius);
-      data.unloadedDeltaMm.push((unloadedHeight - params.height) * 1000);
-      data.loadedDeltaMm.push((loadedHeight - params.height) * 1000);
-      data.unloadedTwistDeltaMm.push((unloadedHeight - unloadedZero) * 1000);
-      data.loadedTwistDeltaMm.push((loadedHeight - loadedZero) * 1000);
-      data.approxDeltaMm.push((params.radius * params.radius * theta * theta / (12 * params.height)) * 1000);
+      data.thetaRad.push(twist.theta);
+      data.unloadedHeightM.push(twist.unloadedHeight);
+      data.loadedHeightM.push(twist.loadedHeight);
+      data.unloadedRadiusM.push(twist.unloadedRadius);
+      data.loadedRadiusM.push(twist.loadedRadius);
+      data.unloadedDeltaMm.push((twist.unloadedHeight - params.height) * 1000);
+      data.loadedDeltaMm.push((twist.loadedHeight - params.height) * 1000);
+      data.unloadedTwistDeltaMm.push((twist.unloadedHeight - unloadedZero) * 1000);
+      data.loadedTwistDeltaMm.push((twist.loadedHeight - loadedZero) * 1000);
+      data.approxDeltaMm.push(twist.approxDeltaMm);
+      data.requiredTorqueNm.push(twist.requiredTorqueNm);
+      data.torqueNm.push(torqueNm);
+      data.torqueThetaRad.push(torque.theta);
+      data.torqueTurns.push(torque.turns);
+      data.torqueHeightM.push(torque.height);
+      data.torqueRadiusM.push(torque.radius);
+      data.torqueDeltaMm.push((torque.height - params.height) * 1000);
+      data.torqueTwistDeltaMm.push((torque.height - torqueZero) * 1000);
     }
 
     return data;
   }
 
-  function computeActiveState(params, turns) {
+  function computeActiveState(params) {
+    const aParam = forceCoefficient(params);
+    if (params.mode === "torque_control") {
+      const torque = computeTorqueResponse(params, state.currentTorqueNm, aParam);
+      const zeroTorque = computeTorqueResponse(params, 0, aParam);
+      return {
+        controlX: state.currentTorqueNm,
+        turns: torque.turns,
+        thetaRad: torque.theta,
+        torqueNm: state.currentTorqueNm,
+        heightM: torque.height,
+        radiusM: torque.radius,
+        deltaMm: (torque.height - params.height) * 1000,
+        twistDeltaMm: (torque.height - zeroTorque.height) * 1000,
+        relativeHeight: torque.height / params.height,
+        volumeM3: Math.PI * torque.radius * torque.radius * torque.height,
+        approxDeltaMm: (params.radius * params.radius * torque.theta * torque.theta / (12 * params.height)) * 1000
+      };
+    }
+
+    const twist = computeTwistResponse(params, state.currentTurns, aParam);
+    const zeroTwist = computeTwistResponse(params, 0, aParam);
+    return {
+      controlX: state.currentTurns,
+      turns: state.currentTurns,
+      thetaRad: twist.theta,
+      torqueNm: twist.requiredTorqueNm,
+      heightM: twist.loadedHeight,
+      radiusM: twist.loadedRadius,
+      deltaMm: (twist.loadedHeight - params.height) * 1000,
+      twistDeltaMm: (twist.loadedHeight - zeroTwist.loadedHeight) * 1000,
+      relativeHeight: twist.loadedHeight / params.height,
+      volumeM3: Math.PI * twist.loadedRadius * twist.loadedRadius * twist.loadedHeight,
+      unloadedHeightM: twist.unloadedHeight,
+      loadedHeightM: twist.loadedHeight,
+      unloadedRadiusM: twist.unloadedRadius,
+      loadedRadiusM: twist.loadedRadius,
+      approxDeltaMm: twist.approxDeltaMm
+    };
+  }
+
+  function computeTwistResponse(params, turns, aParam) {
     const theta = turns * TWO_PI;
     const bParam = Math.pow(params.radius * theta, 2) / (4 * params.height * params.height);
-    const aParam = params.forceN === 0 ? 0 : params.forceN / (params.muPa * Math.PI * params.radius * params.radius);
     const unloadedHeight = params.height * Math.pow(1 + bParam, 1 / 3);
     const loadedHeight = params.height * solveLoadedLambda(aParam, bParam);
     const unloadedRadius = Math.sqrt(params.height / unloadedHeight) * params.radius;
     const loadedRadius = Math.sqrt(params.height / loadedHeight) * params.radius;
-    const height = params.mode === "twist_only" ? unloadedHeight : loadedHeight;
-    const radius = params.mode === "twist_only" ? unloadedRadius : loadedRadius;
 
     return {
-      turns,
-      thetaRad: theta,
-      heightM: height,
-      radiusM: radius,
-      deltaMm: (height - params.height) * 1000,
-      relativeHeight: height / params.height,
-      volumeM3: Math.PI * radius * radius * height,
-      unloadedHeightM: unloadedHeight,
-      loadedHeightM: loadedHeight,
-      unloadedRadiusM: unloadedRadius,
-      loadedRadiusM: loadedRadius,
-      approxDeltaMm: (params.radius * params.radius * theta * theta / (12 * params.height)) * 1000
+      theta,
+      unloadedHeight,
+      loadedHeight,
+      unloadedRadius,
+      loadedRadius,
+      approxDeltaMm: (params.radius * params.radius * theta * theta / (12 * params.height)) * 1000,
+      requiredTorqueNm: requiredTorqueFromTwist(params, loadedHeight, theta)
     };
+  }
+
+  function computeTorqueResponse(params, torqueNm, aParam) {
+    const torqueParam = torqueNm === 0
+      ? 0
+      : (torqueNm * torqueNm) / (params.muPa * params.muPa * Math.PI * Math.PI * Math.pow(params.radius, 6));
+    const height = params.height * solveLoadedLambda(aParam + torqueParam, 0);
+    const radius = Math.sqrt(params.height / height) * params.radius;
+    const theta = 2 * height * torqueNm / (params.muPa * Math.PI * Math.pow(params.radius, 4));
+
+    return {
+      height,
+      radius,
+      theta,
+      turns: theta / TWO_PI
+    };
+  }
+
+  function forceCoefficient(params) {
+    return params.forceN === 0 ? 0 : params.forceN / (params.muPa * Math.PI * params.radius * params.radius);
+  }
+
+  function requiredTorqueFromTwist(params, height, theta) {
+    if (theta === 0) {
+      return 0;
+    }
+    return theta * params.muPa * Math.PI * Math.pow(params.radius, 4) / (2 * height);
   }
 
   function solveLoadedLambda(aParam, bParam) {
@@ -400,11 +492,13 @@
     els.heightReadout.textContent = `${formatNumber(active.heightM, 5)} m`;
     els.radiusReadout.textContent = `${formatNumber(active.radiusM * 1000, 4)} mm`;
     els.elongationReadout.textContent = `${formatNumber(active.deltaMm, 4)} mm`;
+    els.twistDeltaReadout.textContent = `${formatNumber(active.twistDeltaMm, 4)} mm`;
     els.relativeHeightReadout.textContent = formatNumber(active.relativeHeight, 4);
     els.initialVolumeReadout.textContent = `${formatExponential(data.initialVolumeM3)} m^3`;
     els.currentVolumeReadout.textContent = `${formatExponential(active.volumeM3)} m^3`;
     els.volumeRatioReadout.textContent = formatNumber(active.volumeM3 / data.initialVolumeM3, 4);
     els.forceReadout.textContent = `${formatNumber(params.forceN, 3)} N`;
+    els.torqueReadout.textContent = `${formatNumber(active.torqueNm, 5)} N m`;
   }
 
   function drawScene(params, active) {
@@ -414,22 +508,32 @@
     ctx.clearRect(0, 0, size.width, size.height);
     drawSceneBackground(ctx, size.width, size.height);
 
-    const radialScale = Math.min(Math.max(0.10 * params.height / params.radius, 1), 30);
+    const radialScale = getSceneRadiusScale(params);
+    const frameRadius = getSceneFrameRadius(params);
     const referenceRadius = params.radius * radialScale;
     const activeRadius = active.radiusM * radialScale;
-    const projector = makeProjector(size.width, size.height, params, active, radialScale);
+    const projector = makeProjector(size.width, size.height, params, active, radialScale, frameRadius);
 
-    drawGrid(ctx, projector, Math.max(referenceRadius, activeRadius), params.height);
-
-    if (params.showReference) {
-      drawCylinder(ctx, projector, referenceRadius, params.height, 0, [126, 130, 130], 0.22, "#737a78");
-    }
+    drawGrid(ctx, projector, frameRadius, params.height);
 
     drawCylinder(ctx, projector, activeRadius, active.heightM, active.thetaRad, [222, 123, 47], 0.88, "#743e14");
     drawHelix(ctx, projector, activeRadius, active.heightM, active.thetaRad);
     drawTwistArc(ctx, projector, activeRadius, active.heightM, active.thetaRad);
-    drawRulers(ctx, projector, params.height, active.heightM, Math.max(referenceRadius, activeRadius));
-    drawSceneOverlay(ctx, params, active, radialScale, size.width);
+    drawRulers(ctx, projector, params.height, active.heightM, Math.max(referenceRadius, activeRadius, frameRadius * 0.42));
+    drawSceneOverlay(ctx, params, active, size.width);
+  }
+
+  function getSceneRadiusScale(params) {
+    const radiusRange = ranges.radiusMm.max - ranges.radiusMm.min;
+    const normalizedRadius = radiusRange <= 0
+      ? 0
+      : clamp((params.radiusMm - ranges.radiusMm.min) / radiusRange, 0, 1);
+    const targetRadius = params.height * (0.055 + 0.110 * Math.sqrt(normalizedRadius));
+    return targetRadius / Math.max(params.radius, 1e-9);
+  }
+
+  function getSceneFrameRadius(params) {
+    return params.height * 0.165;
   }
 
   function drawSceneBackground(ctx, width, height) {
@@ -440,10 +544,11 @@
     ctx.fillRect(0, 0, width, height);
   }
 
-  function makeProjector(width, height, params, active, radialScale) {
+  function makeProjector(width, height, params, active, radialScale, frameRadius) {
     const azimuth = state.cameraAzimuth * DEG;
     const elevation = state.cameraElevation * DEG;
-    const xyLim = Math.max(params.radius * radialScale, active.radiusM * radialScale) * 3.2;
+    const visualRadius = Math.max(params.radius * radialScale, active.radiusM * radialScale);
+    const xyLim = Math.max(frameRadius * 2.45, visualRadius * 1.35, params.height * 0.18);
     const zMin = -0.10 * params.height;
     const zMax = Math.max(params.height, active.heightM) * 1.22;
 
@@ -655,22 +760,23 @@
     ctx.restore();
   }
 
-  function drawSceneOverlay(ctx, params, active, radialScale, width) {
+  function drawSceneOverlay(ctx, params, active, width) {
     ctx.save();
     ctx.font = "800 12px Inter, system-ui, sans-serif";
     ctx.textBaseline = "top";
-    const modeText = params.mode === "twist_only" ? "무하중 비틀림" : "하중 + 비틀림";
+    const modeText = getModeText(params.mode);
     const lines = [
       modeText,
       `theta = ${formatNumber(active.turns * 360, 1)} deg`,
-      `반지름 ${formatNumber(radialScale, 1)}x 표시`
+      `M = ${formatNumber(active.torqueNm, 6)} N m`,
+      `R_e = ${formatNumber(params.radiusMm, 2)} mm`
     ];
     const boxWidth = 178;
     const x = width - boxWidth - 18;
     let y = 18;
     ctx.fillStyle = "rgba(255, 253, 248, 0.86)";
     ctx.strokeStyle = "rgba(217, 210, 196, 0.95)";
-    roundRect(ctx, x, y, boxWidth, 74, 8);
+    roundRect(ctx, x, y, boxWidth, 92, 8);
     ctx.fill();
     ctx.stroke();
     ctx.fillStyle = "#263030";
@@ -699,26 +805,36 @@
     ctx.fillRect(0, 0, size.width, size.height);
 
     const gap = 22;
-    const chartHeight = (size.height - gap * 2 - 18) / 3;
     const chartWidth = size.width;
+    const chartHeight = (size.height - gap) / 2;
+    const torqueMode = params.mode === "torque_control";
+    const xValues = torqueMode ? data.torqueNm : data.turns;
+    const xMax = torqueMode ? params.maxTorqueNm : params.maxTurns;
+    const activeX = torqueMode ? active.torqueNm : active.turns;
+    const xLabel = torqueMode ? "토크 M (N m)" : "비틀림 횟수";
+    const xDigits = torqueMode ? 4 : 1;
+    const totalSeries = torqueMode
+      ? [{ values: data.torqueDeltaMm, color: "#2f7b68", dash: [], label: "전체 신장" }]
+      : [{ values: data.loadedDeltaMm, color: "#c84a38", dash: [], label: "전체 신장" }];
+    const twistSeries = torqueMode
+      ? [{ values: data.torqueTwistDeltaMm, color: "#2368a8", dash: [], label: "추가 신장" }]
+      : [{ values: data.loadedTwistDeltaMm, color: "#2368a8", dash: [], label: "추가 신장" }];
 
     drawSingleChart(ctx, {
       x: 0,
       y: 0,
       w: chartWidth,
       h: chartHeight,
-      title: "늘어난 길이  h - H",
-      yLabel: "mm",
-      xMax: params.maxTurns,
-      series: [
-        { values: data.unloadedDeltaMm, color: "#2368a8", dash: [7, 5], label: "Eq.13" },
-        { values: data.loadedDeltaMm, color: "#c84a38", dash: [], label: "Eq.15" },
-        { values: data.approxDeltaMm, color: "#263030", dash: [2, 4], label: "Eq.14" }
-      ],
+      title: "전체 신장: h - H",
+      yLabel: "stress-free 기준 (mm)",
+      xLabel,
+      xDigits,
+      xMax,
+      series: totalSeries,
       activeY: active.deltaMm,
-      activeX: active.turns,
-      xValues: data.turns,
-      showLegend: true
+      activeX,
+      xValues,
+      activeLabel: `현재 ${formatNumber(active.deltaMm, 3)} mm`
     });
 
     drawSingleChart(ctx, {
@@ -726,41 +842,24 @@
       y: chartHeight + gap,
       w: chartWidth,
       h: chartHeight,
-      title: "상대 높이  h / H",
-      yLabel: "ratio",
-      xMax: params.maxTurns,
-      series: [
-        { values: data.unloadedHeightM.map(function (v) { return v / params.height; }), color: "#2368a8", dash: [7, 5], label: "무하중" },
-        { values: data.loadedHeightM.map(function (v) { return v / params.height; }), color: "#c84a38", dash: [], label: "하중" }
-      ],
-      activeY: active.relativeHeight,
-      activeX: active.turns,
-      xValues: data.turns
-    });
-
-    drawSingleChart(ctx, {
-      x: 0,
-      y: (chartHeight + gap) * 2,
-      w: chartWidth,
-      h: chartHeight,
-      title: "반지름  r",
-      yLabel: "mm",
-      xMax: params.maxTurns,
-      series: [
-        { values: data.unloadedRadiusM.map(function (v) { return v * 1000; }), color: "#2368a8", dash: [7, 5], label: "무하중" },
-        { values: data.loadedRadiusM.map(function (v) { return v * 1000; }), color: "#c84a38", dash: [], label: "하중" }
-      ],
-      activeY: active.radiusM * 1000,
-      activeX: active.turns,
-      xValues: data.turns
+      title: "비틀림 추가 신장: h(θ) - h(0)",
+      yLabel: "하중 후 기준 (mm)",
+      xLabel,
+      xDigits,
+      xMax,
+      series: twistSeries,
+      activeY: active.twistDeltaMm,
+      activeX,
+      xValues,
+      activeLabel: `추가 ${formatNumber(active.twistDeltaMm, 3)} mm`
     });
   }
 
   function drawSingleChart(ctx, config) {
-    const left = 58;
-    const right = 18;
-    const top = 28;
-    const bottom = 34;
+    const left = 78;
+    const right = 28;
+    const top = 46;
+    const bottom = 48;
     const plot = {
       x: config.x + left,
       y: config.y + top,
@@ -783,8 +882,9 @@
     yMin -= pad;
     yMax += pad;
 
+    const xMax = Math.max(Math.abs(config.xMax), 1e-9);
     const xToPx = function (x) {
-      return plot.x + (x / config.xMax) * plot.w;
+      return plot.x + (x / xMax) * plot.w;
     };
     const yToPx = function (y) {
       return plot.y + plot.h - ((y - yMin) / (yMax - yMin)) * plot.h;
@@ -792,11 +892,12 @@
 
     ctx.save();
     ctx.fillStyle = "#222a2a";
-    ctx.font = "900 13px Inter, system-ui, sans-serif";
-    ctx.fillText(config.title, config.x + 8, config.y + 15);
+    ctx.font = "900 14px Inter, system-ui, sans-serif";
+    ctx.fillText(config.title, config.x + 14, config.y + 23);
     ctx.font = "800 11px Inter, system-ui, sans-serif";
     ctx.fillStyle = "#657070";
-    ctx.fillText(config.yLabel, config.x + 8, plot.y + 12);
+    ctx.fillText(config.yLabel, config.x + 14, plot.y + 14);
+    ctx.fillText(config.xLabel || "", plot.x + plot.w - 92, config.y + config.h - 14);
 
     ctx.strokeStyle = "#d9d2c4";
     ctx.lineWidth = 1;
@@ -818,12 +919,23 @@
     }
     for (let i = 0; i <= 4; i += 1) {
       const x = plot.x + plot.w * i / 4;
-      const value = config.xMax * i / 4;
+      const value = xMax * i / 4;
       ctx.beginPath();
       ctx.moveTo(x, plot.y);
       ctx.lineTo(x, plot.y + plot.h);
       ctx.stroke();
-      ctx.fillText(formatNumber(value, value % 1 === 0 ? 0 : 1), x - 7, plot.y + plot.h + 18);
+      const digits = config.xDigits === undefined ? (value % 1 === 0 ? 0 : 1) : config.xDigits;
+      ctx.fillText(formatNumber(value, digits), x - 7, plot.y + plot.h + 18);
+    }
+
+    if (yMin < 0 && yMax > 0) {
+      const zeroY = yToPx(0);
+      ctx.strokeStyle = "rgba(34, 42, 42, 0.42)";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(plot.x, zeroY);
+      ctx.lineTo(plot.x + plot.w, zeroY);
+      ctx.stroke();
     }
 
     config.series.forEach(function (series) {
@@ -860,8 +972,26 @@
     ctx.fill();
     ctx.stroke();
 
+    if (config.activeLabel) {
+      ctx.font = "900 11px Inter, system-ui, sans-serif";
+      const labelPadX = 8;
+      const labelHeight = 24;
+      const labelWidth = ctx.measureText(config.activeLabel).width + labelPadX * 2;
+      const labelX = Math.min(Math.max(activeX + 10, plot.x), plot.x + plot.w - labelWidth);
+      const labelY = Math.max(plot.y + 8, activeY - labelHeight - 10);
+      ctx.fillStyle = "rgba(255, 253, 248, 0.94)";
+      ctx.strokeStyle = "rgba(34, 42, 42, 0.28)";
+      ctx.lineWidth = 1;
+      roundRect(ctx, labelX, labelY, labelWidth, labelHeight, 7);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#222a2a";
+      ctx.fillText(config.activeLabel, labelX + labelPadX, labelY + 15);
+    }
+
     if (config.showLegend) {
-      let x = plot.x + plot.w - 172;
+      const legendStep = config.series.length > 2 ? 98 : 112;
+      let x = Math.max(plot.x + 8, plot.x + plot.w - legendStep * config.series.length);
       const y = config.y + 13;
       config.series.forEach(function (series) {
         ctx.strokeStyle = series.color;
@@ -875,110 +1005,16 @@
         ctx.fillStyle = "#354040";
         ctx.font = "800 10px Inter, system-ui, sans-serif";
         ctx.fillText(series.label, x + 27, y + 3);
-        x += 58;
+        x += legendStep;
       });
     }
 
     ctx.restore();
   }
 
-  function downloadCsv() {
-    const params = getParams();
-    const data = cachedData || computePoyntingData(params);
-    const active = computeActiveState(params, state.currentTurns);
-    const rows = [];
-    const modeText = params.mode === "twist_only" ? "무하중 비틀림" : "하중 + 비틀림";
-
-    rows.push(["section", "key", "value", "unit"]);
-    rows.push(["metadata", "calculation_mode", modeText, ""]);
-    rows.push(["metadata", "display_turns", state.currentTurns, "turns"]);
-    rows.push(["metadata", "display_theta", state.currentTurns * TWO_PI, "rad"]);
-    rows.push(["metadata", "initial_height", params.heightMm, "mm"]);
-    rows.push(["metadata", "initial_radius", params.radiusMm, "mm"]);
-    rows.push(["metadata", "shear_modulus", params.muPsi, "psi"]);
-    rows.push(["metadata", "mass", params.massKg, "kg"]);
-    rows.push(["metadata", "force", params.forceN, "N"]);
-    rows.push(["metadata", "active_height", active.heightM, "m"]);
-    rows.push(["metadata", "active_radius", active.radiusM * 1000, "mm"]);
-    rows.push(["metadata", "active_delta", active.deltaMm, "mm"]);
-    rows.push([]);
-    rows.push(["section", "equation", "expression", "note"]);
-    rows.push(["equations", "Eq. 13 unloaded twist", "h = H*(1 + Re^2*theta^2/(4*H^2))^(1/3)", ""]);
-    rows.push(["equations", "Eq. 14 slender approximation", "h - H ~= Re^2*theta^2/(12*H)", ""]);
-    rows.push(["equations", "Eq. 15 loaded twist", "(h/H)^3 - F/(mu*pi*Re^2)*(h/H)^2 - (1 + Re^2*theta^2/(4*H^2)) = 0", ""]);
-    rows.push([]);
-    rows.push([
-      "turns",
-      "theta_rad",
-      "unloaded_height_m",
-      "loaded_height_m",
-      "unloaded_delta_mm",
-      "loaded_delta_mm",
-      "unloaded_twist_only_delta_mm",
-      "loaded_twist_only_delta_mm",
-      "approximation_delta_mm"
-    ]);
-
-    data.turns.forEach(function (turns, i) {
-      rows.push([
-        turns,
-        data.thetaRad[i],
-        data.unloadedHeightM[i],
-        data.loadedHeightM[i],
-        data.unloadedDeltaMm[i],
-        data.loadedDeltaMm[i],
-        data.unloadedTwistDeltaMm[i],
-        data.loadedTwistDeltaMm[i],
-        data.approxDeltaMm[i]
-      ]);
-    });
-
-    const csv = rows.map(function (row) {
-      return row.map(csvCell).join(",");
-    }).join("\n");
-    const name = buildFileName("poynting_results", "csv");
-    downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), name);
-    setStatus("CSV 저장 완료", false);
-  }
-
-  function downloadPng() {
-    els.sceneCanvas.toBlob(function (blob) {
-      if (!blob) {
-        setStatus("그림 저장 실패", false);
-        return;
-      }
-      downloadBlob(blob, buildFileName("poynting_scene", "png"));
-      setStatus("그림 저장 완료", false);
-    }, "image/png");
-  }
-
-  function buildFileName(prefix, extension) {
-    const stamp = new Date().toISOString().replace(/[-:]/g, "").slice(0, 15);
-    return `${prefix}_${stamp}_H${formatNumber(state.heightMm, 0)}mm_R${formatNumber(state.radiusMm, 2)}mm_mu${formatNumber(state.muPsi, 0)}_m${formatNumber(state.massKg, 2)}_T${state.maxTurns}.${extension}`;
-  }
-
-  function downloadBlob(blob, fileName) {
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = fileName;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
-  }
-
-  function csvCell(value) {
-    if (value === undefined || value === null) {
-      return "";
-    }
-    const text = String(value).replace(/"/g, '""');
-    return `"${text}"`;
-  }
-
   function setStatus(text, playing) {
-    els.statusText.textContent = text;
-    els.statusDot.classList.toggle("is-playing", playing);
+    void text;
+    void playing;
   }
 
   function fitCanvas(canvas) {
@@ -1044,5 +1080,9 @@
 
   function formatExponential(value) {
     return Number(value).toExponential(4);
+  }
+
+  function getModeText(mode) {
+    return mode === "torque_control" ? "토크 지정" : "비틀림 각도 지정";
   }
 })();
